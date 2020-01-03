@@ -1,9 +1,6 @@
 import json
 from asyncio import queues, wait_for, TimeoutError
-
 from typing import Any, Set, Dict
-
-from belts.util import single_wait
 
 
 class ObjectClient:
@@ -47,7 +44,7 @@ class Queue:
     async def clear(self):
         self.queue = queues.Queue()
 
-    async def length(self):
+    async def qsize(self):
         return self.queue.qsize()
 
 

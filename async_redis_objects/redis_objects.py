@@ -64,6 +64,9 @@ class Queue:
     async def push(self, data):
         await self.client.lpush(self.key, json.dumps(data))
 
+    async def put(self, data):
+        await self.push(data)
+
     async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
         if blocking:
             message = await self.client.blpop(self.key, timeout=timeout)
@@ -72,6 +75,9 @@ class Queue:
         if message is None:
             return None
         return json.loads(message)
+
+    async def get(self, timeout: int = 1, blocking: bool = True) -> Any:
+        return await self.pop(timeout=timeout, blocking=blocking)
 
     async def clear(self):
         await self.client.delete(self.key)
@@ -85,6 +91,9 @@ class PriorityQueue:
     async def push(self, data, priority=0):
         await self.client.zadd(self.key, priority, json.dumps(data))
 
+    async def put(self, data, priority=0):
+        await self.push(data, priority=priority)
+
     async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
         if blocking:
             message = await self.client.bzpopmax(self.key, timeout=timeout)
@@ -93,6 +102,9 @@ class PriorityQueue:
         if message is None:
             return None
         return json.loads(message)
+
+    async def get(self, timeout: int = 1, blocking: bool = True) -> Any:
+        return await self.pop(timeout=timeout, blocking=blocking)
 
     async def clear(self):
         await self.client.delete(self.key)
