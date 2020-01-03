@@ -1,22 +1,13 @@
-import asyncio
 import uuid
-from contextlib import asynccontextmanager
 
 import pytest
 import aioredis
 
-from belts.redis_objects import Hash
-
-#
-# @pytest.fixture
-# async def client():
-#     return FakeAsyncRedis()
+from .objects import Hash
 
 
 @pytest.fixture
 async def client():
-    pytest.skip()
-    return
     try:
         redis = aioredis.Redis(await aioredis.pool.create_connection(address='redis://localhost:6379', db=3))
         yield redis
