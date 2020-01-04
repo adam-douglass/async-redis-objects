@@ -1,14 +1,10 @@
 import os
-import os.path
 from setuptools import setup, find_packages
 from pkg_resources import parse_version
 
-version = os.environ.get('GITHUB_REF', "v0.0.0")
-version = parse_version(version.lstrip('v'))
-
 setup(
     name="async_redis_objects",
-    version=version,
+    version=str(parse_version(os.environ.get('GITHUB_REF', "v0.0.0"))),
     packages=find_packages(),
 
     # metadata to display on PyPI
