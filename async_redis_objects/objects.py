@@ -94,20 +94,20 @@ class PriorityQueue:
     async def push(self, data, priority=0):
         await self.client.zadd(self.key, priority, json.dumps(data))
 
-    async def put(self, data, priority=0):
-        await self.push(data, priority=priority)
-
-    async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
-        if blocking:
-            message = await self.client.bzpopmax(self.key, timeout=timeout)
-        else:
-            message = await self.client.zpopmax(self.key)
+    async def pop(self, timeout: int = 1) -> Any:
+        message = await self.client.bzpopmax(self.key, timeout=timeout)
         if message is None:
             return None
         return json.loads(message)
 
-    async def get(self, timeout: int = 1, blocking: bool = True) -> Any:
-        return await self.pop(timeout=timeout, blocking=blocking)
+    async def pop_ready(self) -> Any:
+        message = await self.client.zpopmax(self.key)
+        if message is None:
+            return None
+        return json.loads(message)
 
     async def clear(self):
         await self.client.delete(self.key)
+
+    async def length(self):
+        await self.client.zcount(self.key)
