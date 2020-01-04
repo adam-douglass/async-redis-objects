@@ -68,7 +68,7 @@ class Queue:
         message = await self.client.brpop(self.key, timeout=timeout)
         if message is None:
             return None
-        return json.loads(message)
+        return json.loads(message[1])
 
     async def pop_ready(self) -> Any:
         message = await self.client.rpop(self.key)
