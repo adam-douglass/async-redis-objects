@@ -65,13 +65,13 @@ class Queue:
         await self.client.lpush(self.key, json.dumps(data))
 
     async def pop(self, timeout: int = 1) -> Any:
-        message = await self.client.blpop(self.key, timeout=timeout)
+        message = await self.client.brpop(self.key, timeout=timeout)
         if message is None:
             return None
         return json.loads(message)
 
     async def pop_ready(self) -> Any:
-        message = await self.client.lpop(self.key)
+        message = await self.client.rpop(self.key)
         if message is None:
             return None
         return json.loads(message)
