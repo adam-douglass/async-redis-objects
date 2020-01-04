@@ -98,13 +98,13 @@ class PriorityQueue:
         message = await self.client.bzpopmax(self.key, timeout=timeout)
         if message is None:
             return None
-        return json.loads(message)
+        return json.loads(message[1])
 
     async def pop_ready(self) -> Any:
         message = await self.client.zpopmax(self.key)
         if message is None:
             return None
-        return json.loads(message)
+        return json.loads(message[0])
 
     async def clear(self):
         await self.client.delete(self.key)

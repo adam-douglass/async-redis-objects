@@ -102,8 +102,10 @@ async def test_priority_queue(client):
 
     assert await queue.score(100) == 1
     assert await queue.score('cat') == 10
+    assert await queue.score('dog') is None
     assert await queue.rank(100) == 1
     assert await queue.rank('cat') == 0
+    assert await queue.rank('dog') is None
 
     assert await queue.pop_ready() == 'cat'
     assert await queue.pop() == 100
