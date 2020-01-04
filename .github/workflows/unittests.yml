@@ -44,7 +44,7 @@ jobs:
         pytest --cov=async_redis_objects --cov-report=xml
 
     - name: Check examples in readme
-      shell: python
+      shell: python3
       run: |
         import sys
         print(sys.version)
