@@ -109,5 +109,11 @@ class PriorityQueue:
     async def clear(self):
         await self.client.delete(self.key)
 
+    async def score(self, item):
+        return await self.client.zscore(self.key, json.dumps(item))
+
+    async def rank(self, item):
+        return await self.client.zrank(self.key, json.dumps(item))
+
     async def length(self):
         return await self.client.zcount(self.key)

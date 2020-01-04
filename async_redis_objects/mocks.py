@@ -81,6 +81,13 @@ class PriorityQueue:
                 return priority
         return None
 
+    async def rank(self, data):
+        data = json.dumps(data)
+        for index, (_, item) in enumerate(self.queue):
+            if data == item:
+                return len(self.queue) - index - 1
+        return None
+
     async def clear(self):
         self.queue = []
         self.items = Semaphore(value=0)
