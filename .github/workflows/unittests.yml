@@ -46,6 +46,8 @@ jobs:
     - name: Check examples in readme
       shell: python
       run: |
+        import sys
+        print(sys.version)
         import re
         for fragment in re.findall('```python(.*?)```', open('readme.md').read(), re.DOTALL):
             exec(fragment)
