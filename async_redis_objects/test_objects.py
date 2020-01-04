@@ -3,14 +3,24 @@ import uuid
 import pytest
 import aioredis
 
+from . import objects, mocks
 from .objects import Hash
 
 
+def pytest_generate_tests(metafunc):
+    if "client" in metafunc.fixturenames:
+        metafunc.parametrize("client", ["mock", "live"], indirect=True)
+
+
 @pytest.fixture
-async def client():
+async def client(request):
+    if request.param == 'mock':
+        yield mocks.ObjectClient()
+        return
+
     try:
         redis = aioredis.Redis(await aioredis.pool.create_connection(address='redis://localhost:6379', db=3))
-        yield redis
+        yield objects.ObjectClient(redis)
         await redis.flushdb()
         redis.close()
         await redis.wait_closed()
@@ -20,7 +30,7 @@ async def client():
 
 @pytest.fixture
 async def new_hash(client):
-    return Hash(uuid.uuid4().hex, client)
+    return client.hash(uuid.uuid4().hex)
 
 
 @pytest.mark.asyncio
