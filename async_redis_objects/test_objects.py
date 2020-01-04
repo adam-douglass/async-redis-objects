@@ -80,7 +80,7 @@ async def test_queue(client):
         await asyncio.sleep(0.01)
         await queue.push(999)
 
-    asyncio.create_task(_then_add())
+    asyncio.ensure_future(_then_add())
     assert await queue.pop_ready() is None
     assert await queue.pop() == 999
     assert await queue.pop(timeout=0.0001) is None
