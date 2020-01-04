@@ -80,7 +80,7 @@ class Queue:
         await self.client.delete(self.key)
 
     async def length(self):
-        await self.client.llen(self.key)
+        return await self.client.llen(self.key)
 
 
 class PriorityQueue:
