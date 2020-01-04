@@ -72,9 +72,11 @@ async def test_queue(client):
 
     await queue.push(100)
     await queue.push('cat')
+    assert await queue.length() == 2
 
     assert await queue.pop_ready() == 100
     assert await queue.pop() == 'cat'
+    assert await queue.length() == 0
 
     async def _then_add():
         await asyncio.sleep(0.01)
@@ -82,5 +84,10 @@ async def test_queue(client):
 
     asyncio.ensure_future(_then_add())
     assert await queue.pop_ready() is None
-    assert await queue.pop() == 999
-    assert await queue.pop(timeout=0.0001) is None
+    assert await queue.pop(timeout=5) == 999
+    assert await queue.pop() is None
+
+    await queue.push(1)
+    await queue.clear()
+    assert await queue.length() == 0
+    assert await queue.pop_ready() is None
