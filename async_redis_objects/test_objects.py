@@ -52,6 +52,7 @@ async def test_hash_basics(client):
     # Get all the keys
     assert set(await new_hash.keys()) == {'a', 'a2', 'b', 'c', 'd'}
     assert await new_hash.delete('a2')
+    assert not await new_hash.delete('a28473')
     assert set(await new_hash.keys()) == {'a', 'b', 'c', 'd'}
     assert await new_hash.all() == {
         'a': 10,
