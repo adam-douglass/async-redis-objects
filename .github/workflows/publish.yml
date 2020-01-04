@@ -21,7 +21,7 @@ jobs:
     - name: Test
       run: |
         rm -rf async_redis_objects setup.py
-        pip install async_redis_objects[test]==${GITHUB_REF##v} -f ./dist
+        pip install async_redis_objects[test]==${GITHUB_REF##refs/tags/v} -f ./dist
         pytest --pyargs async_redis_objects
     - name: Publish
       env:

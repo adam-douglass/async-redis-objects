@@ -4,7 +4,7 @@ from pkg_resources import parse_version
 
 setup(
     name="async_redis_objects",
-    version=str(parse_version(os.environ.get('GITHUB_REF', "v0.0.0"))),
+    version=str(parse_version(os.environ.get('GITHUB_REF', "0.0.0").lstrip('refs/tags/v'))),
     packages=find_packages(),
 
     # metadata to display on PyPI
