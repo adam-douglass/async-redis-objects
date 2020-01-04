@@ -113,7 +113,7 @@ class PriorityQueue:
         return await self.client.zscore(self.key, json.dumps(item))
 
     async def rank(self, item):
-        return await self.client.zrank(self.key, json.dumps(item))
+        return await self.client.zrevrank(self.key, json.dumps(item))
 
     async def length(self):
         return await self.client.zcount(self.key)
