@@ -13,7 +13,7 @@ Notes
    - hash table
    - queue (list)
    - priority queue (sorted set)
- - Includes python implementation with matching interface for mocking.
+ - Includes python implementation with matching interface for mocking. \
    `from async_redis_objects.mocks import ObjectClient`
 
 Example
