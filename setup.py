@@ -10,7 +10,7 @@ setup(
     author_email="douglass@malloc.ca",
     description="Object orient interface to aioredis.",
     keywords="utility redis oop object-oriented",
-    url="https://github.com/adam-douglass/draughts/",
+    url="https://github.com/adam-douglass/async-redis-objects/",
 
     extras_require={
         'test': ['pytest', 'pytest-asyncio']
