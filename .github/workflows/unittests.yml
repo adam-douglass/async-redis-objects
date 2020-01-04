@@ -43,14 +43,15 @@ jobs:
         pip install pytest-cov
         pytest --cov=async_redis_objects --cov-report=xml
 
-    - name: Check examples in readme
-      run: |
+    - name: Run examples in readme
+      run: |-
         python <<'EOM'
-        import sys
-        print(sys.version)
         import re
+        count = 0
         for fragment in re.findall('```python(.*?)```', open('readme.md').read(), re.DOTALL):
+            count += 1
             exec(fragment)
+        print("Ran", count, "examples from readme.md")
         'EOM'
 
     - name: Upload coverage
