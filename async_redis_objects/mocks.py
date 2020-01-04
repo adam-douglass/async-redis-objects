@@ -1,5 +1,5 @@
 import json
-from asyncio import queues, wait_for, TimeoutError
+from asyncio import queues, wait_for, TimeoutError, Semaphore
 from typing import Any, Set, Dict
 
 
@@ -34,10 +34,7 @@ class Queue:
 
     async def pop(self, timeout: int = 1) -> Any:
         try:
-            message = await wait_for(self.queue.get(), timeout=timeout)
-            if message is None:
-                return None
-            return json.loads(message)
+            return json.loads(await wait_for(self.queue.get(), timeout=timeout))
         except TimeoutError:
             return None
 
@@ -56,30 +53,40 @@ class Queue:
 
 class PriorityQueue:
     def __init__(self):
-        self.queue = queues.PriorityQueue()
+        self.queue = []
+        self.items = Semaphore(value=0)
 
     async def push(self, data, priority=0):
-        await self.queue.put((-priority, json.dumps(data)))
+        self.queue.append((priority, json.dumps(data)))
+        self.queue.sort()
+        self.items.release()
 
-    async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
-        if blocking:
-            try:
-                message = await wait_for(self.queue.get(), timeout)
-            except TimeoutError:
-                return None
-        else:
-            message = self.queue.get_nowait()
-
-        if message is None:
+    async def pop(self, timeout: int = 1) -> Any:
+        try:
+            await wait_for(self.items.acquire(), timeout)
+            return json.loads(self.queue.pop(-1)[1])
+        except TimeoutError:
             return None
 
-        return json.loads(message[1])
+    async def pop_ready(self) -> Any:
+        if self.items.locked():
+            return None
+        await self.items.acquire()
+        return json.loads(self.queue.pop(-1)[1])
 
     async def score(self, data):
-        return 1
+        data = json.dumps(data)
+        for priority, item in self.queue:
+            if data == item:
+                return priority
+        return None
 
     async def clear(self):
-        self.queue = queues.PriorityQueue()
+        self.queue = []
+        self.items = Semaphore(value=0)
+
+    async def length(self):
+        return len(self.queue)
 
 
 class Hash:

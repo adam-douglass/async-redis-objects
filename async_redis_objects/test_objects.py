@@ -90,3 +90,33 @@ async def test_queue(client):
     await queue.clear()
     assert await queue.length() == 0
     assert await queue.pop_ready() is None
+
+
+@pytest.mark.asyncio
+async def test_priority_queue(client):
+    queue = client.priority_queue(uuid.uuid4().hex)
+
+    await queue.push(100, priority=1)
+    await queue.push('cat', priority=10)
+    assert await queue.length() == 2
+
+    assert await queue.score(100) == 1
+    assert await queue.score('cat') == 10
+
+    assert await queue.pop_ready() == 'cat'
+    assert await queue.pop() == 100
+    assert await queue.length() == 0
+
+    async def _then_add():
+        await asyncio.sleep(0.01)
+        await queue.push(999)
+
+    asyncio.ensure_future(_then_add())
+    assert await queue.pop_ready() is None
+    assert await queue.pop(timeout=5) == 999
+    assert await queue.pop() is None
+
+    await queue.push(1)
+    await queue.clear()
+    assert await queue.length() == 0
+    assert await queue.pop_ready() is None
