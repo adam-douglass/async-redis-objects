@@ -86,13 +86,13 @@ class Hash:
     async def set(self, key, value) -> bool:
         """Returns if the key is new or not. Set is performed either way."""
         new = key in self.data
-        self.data[key] = value
+        self.data[key] = json.dumps(value)
         return new
 
     async def add(self, key, value) -> bool:
         """Returns if the key is new or not. Set only performed if key is new."""
-        if key in self.data:
-            self.data[key] = value
+        if key not in self.data:
+            self.data[key] = json.dumps(value)
             return True
         return False
 
