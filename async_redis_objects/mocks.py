@@ -32,19 +32,25 @@ class Queue:
     async def push(self, data):
         await self.queue.put(json.dumps(data))
 
-    async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
-        if blocking:
-            message = await self.queue.get()
-        else:
-            message = await self.queue.get_nowait()
-        if message is None:
+    async def pop(self, timeout: int = 1) -> Any:
+        try:
+            message = await wait_for(self.queue.get(), timeout=timeout)
+            if message is None:
+                return None
+            return json.loads(message)
+        except TimeoutError:
             return None
-        return json.loads(message)
+
+    async def pop_ready(self) -> Any:
+        try:
+            return json.loads(self.queue.get_nowait())
+        except queues.QueueEmpty:
+            return None
 
     async def clear(self):
         self.queue = queues.Queue()
 
-    async def qsize(self):
+    async def length(self):
         return self.queue.qsize()
 
 

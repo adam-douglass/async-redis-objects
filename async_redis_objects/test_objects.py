@@ -1,4 +1,5 @@
 import uuid
+import asyncio
 
 import pytest
 import aioredis
@@ -24,17 +25,14 @@ async def client(request):
         await redis.flushdb()
         redis.close()
         await redis.wait_closed()
-    except ConnectionRefusedError:
+    except ConnectionRefusedError:  # pragma: no cover
         pytest.skip("No redis server available")
 
 
-@pytest.fixture
-async def new_hash(client):
-    return client.hash(uuid.uuid4().hex)
-
-
 @pytest.mark.asyncio
-async def test_hash_basics(new_hash: Hash):
+async def test_hash_basics(client):
+    new_hash = client.hash(uuid.uuid4().hex)
+
     # set something
     await new_hash.set('a', 10)
     await new_hash.set('b', 'abc')
@@ -66,3 +64,23 @@ async def test_hash_basics(new_hash: Hash):
         'a': 10,
         'd': {'char': 'a', 'num': 0}
     }
+
+
+@pytest.mark.asyncio
+async def test_queue(client):
+    queue = client.queue(uuid.uuid4().hex)
+
+    await queue.push(100)
+    await queue.push('cat')
+
+    assert await queue.pop_ready() == 100
+    assert await queue.pop() == 'cat'
+
+    async def _then_add():
+        await asyncio.sleep(0.01)
+        await queue.push(999)
+
+    asyncio.create_task(_then_add())
+    assert await queue.pop_ready() is None
+    assert await queue.pop() == 999
+    assert await queue.pop(timeout=0.0001) is None

@@ -64,23 +64,23 @@ class Queue:
     async def push(self, data):
         await self.client.lpush(self.key, json.dumps(data))
 
-    async def put(self, data):
-        await self.push(data)
-
-    async def pop(self, timeout: int = 1, blocking: bool = True) -> Any:
-        if blocking:
-            message = await self.client.blpop(self.key, timeout=timeout)
-        else:
-            message = await self.client.lpop(self.key)
+    async def pop(self, timeout: int = 1) -> Any:
+        message = await self.client.blpop(self.key, timeout=timeout)
         if message is None:
             return None
         return json.loads(message)
 
-    async def get(self, timeout: int = 1, blocking: bool = True) -> Any:
-        return await self.pop(timeout=timeout, blocking=blocking)
+    async def pop_ready(self) -> Any:
+        message = await self.client.lpop(self.key)
+        if message is None:
+            return None
+        return json.loads(message)
 
     async def clear(self):
         await self.client.delete(self.key)
+
+    async def length(self):
+        await self.client.llen(self.key)
 
 
 class PriorityQueue:
