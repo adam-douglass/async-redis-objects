@@ -4,7 +4,7 @@ from typing import Any, Set, Dict
 
 
 class ObjectClient:
-    def __init__(self):
+    def __init__(self, *_):
         self._queues = {}
         self._priority_queues = {}
         self._hashes = {}
@@ -138,4 +138,3 @@ class Hash:
             del self.data[key]
             return True
         return False
-

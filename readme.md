@@ -6,3 +6,46 @@ Async Redis Objects
 
 Some object orient wrappers around the redis interface provided by `aioredis`.
 
+Notes
+-----
+
+ - Included:
+   - hash table
+   - queue (list)
+   - priority queue (sorted set)
+ - Includes python implementation with matching interface for mocking.
+   `from async_redis_objects.mocks import ObjectClient`
+
+Example
+-------
+
+```python
+import aioredis
+import asyncio
+from async_redis_objects.mocks import ObjectClient
+
+
+async def main():
+    # Connect with aioredis as normal
+    redis = aioredis.Redis(await aioredis.pool.create_pool(address='redis://localhost:6379', db=3, minsize=5))
+
+    # Make an object client object with your redis object
+    objects = ObjectClient(redis)
+
+    # Access a hash table in redis
+    table = objects.hash('hash-table-key')
+    await table.set('name', 'Hello World')
+
+    # Access a queue
+    queue = objects.queue('queue-name')
+    await queue.push(await table.get('name'))
+    await queue.push(100000)
+
+    # Access a priority queue
+    pq = objects.priority_queue('other-queue-name')
+    await pq.push({'name': 'same json serializable object'}, priority=100)
+    await pq.push(await queue.pop(), priority=101)
+    print(await pq.pop())  # Print Hello World
+
+asyncio.run(main())
+```
