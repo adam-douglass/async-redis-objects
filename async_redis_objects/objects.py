@@ -110,4 +110,4 @@ class PriorityQueue:
         await self.client.delete(self.key)
 
     async def length(self):
-        await self.client.zcount(self.key)
+        return await self.client.zcount(self.key)
