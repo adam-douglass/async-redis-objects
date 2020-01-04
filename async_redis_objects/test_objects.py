@@ -19,7 +19,7 @@ async def client(request):
         return
 
     try:
-        redis = await aioredis.pool.create_pool(address='redis://localhost:6379', db=3)
+        redis = aioredis.Redis(await aioredis.pool.create_pool(address='redis://localhost:6379', db=3))
         yield objects.ObjectClient(redis)
         await redis.flushdb()
         redis.close()
