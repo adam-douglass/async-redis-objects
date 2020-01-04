@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Dict, Set
+from typing import Any, Dict, Set
 
 import aioredis
 # from tenacity import retry
@@ -11,6 +11,9 @@ class ObjectClient:
 
     def queue(self, name):
         return Queue(name, self.client)
+
+    def priority_queue(self, name):
+        return PriorityQueue(name, self.client)
 
     def hash(self, name):
         return Hash(name, self.client)
