@@ -45,13 +45,13 @@ jobs:
 
     - name: Check examples in readme
       run: |
-        python <<EOM
+        python <<'EOM'
         import sys
         print(sys.version)
         import re
         for fragment in re.findall('```python(.*?)```', open('readme.md').read(), re.DOTALL):
             exec(fragment)
-        EOM
+        'EOM'
 
     - name: Upload coverage
       uses: codecov/codecov-action@v1
