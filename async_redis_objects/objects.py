@@ -102,7 +102,7 @@ class PriorityQueue:
 
     async def pop_ready(self) -> Any:
         message = await self.client.zpopmax(self.key)
-        if message is None:
+        if not message:
             return None
         return json.loads(message[0])
 
