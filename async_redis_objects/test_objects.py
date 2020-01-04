@@ -5,7 +5,6 @@ import pytest
 import aioredis
 
 from . import objects, mocks
-from .objects import Hash
 
 
 def pytest_generate_tests(metafunc):
@@ -20,7 +19,7 @@ async def client(request):
         return
 
     try:
-        redis = aioredis.Redis(await aioredis.pool.create_connection(address='redis://localhost:6379', db=3))
+        redis = await aioredis.pool.create_pool(address='redis://localhost:6379', db=3)
         yield objects.ObjectClient(redis)
         await redis.flushdb()
         redis.close()
