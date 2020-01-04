@@ -47,5 +47,6 @@ async def main():
     await pq.push(await queue.pop(), priority=101)
     print(await pq.pop())  # Print Hello World
 
-asyncio.run(main())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
 ```
