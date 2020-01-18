@@ -4,7 +4,7 @@
 Async Redis Objects
 ===================
 
-Some object orient wrappers around the redis interface provided by `aioredis`.
+Some object orient wrappers around the redis interface provided by [`aioredis`](https://github.com/aio-libs/aioredis).
 
 Notes
 -----
@@ -15,6 +15,7 @@ Notes
    - priority queue (sorted set)
  - Includes python implementation with matching interface for mocking. \
    `from async_redis_objects.mocks import ObjectClient`
+ - tested on pypy and CPython 3.6 to 3.8
 
 Example
 -------

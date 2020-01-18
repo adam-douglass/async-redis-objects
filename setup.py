@@ -17,7 +17,8 @@ setup(
     url="https://github.com/adam-douglass/async-redis-objects/",
 
     extras_require={
-        'test': ['pytest', 'pytest-asyncio']
+        'test': ['pytest', 'pytest-asyncio'],
+        'docs': ['sphinx', 'sphinx_rtd_theme']
     },
     install_requires=['aioredis'],
 )
