@@ -1,28 +1,13 @@
+"""
+A set of in-process pure python implementations to match the redis based objects.
+
+The objects from this module implement the same interface as those from the
+other modules, but are implemented as native python objects rather than redis calls.
+Whenever possible the interface and semantics should be the same.
+"""
 import json
 from asyncio import queues, wait_for, TimeoutError, Semaphore
 from typing import Any, Set, Dict
-
-
-class ObjectClient:
-    def __init__(self, *_):
-        self._queues = {}
-        self._priority_queues = {}
-        self._hashes = {}
-
-    def queue(self, name):
-        if name not in self._queues:
-            self._queues[name] = Queue()
-        return self._queues[name]
-
-    def priority_queue(self, name):
-        if name not in self._priority_queues:
-            self._priority_queues[name] = PriorityQueue()
-        return self._priority_queues[name]
-
-    def hash(self, name):
-        if name not in self._hashes:
-            self._hashes[name] = Hash()
-        return self._hashes[name]
 
 
 class Queue:
@@ -138,3 +123,25 @@ class Hash:
             del self.data[key]
             return True
         return False
+
+
+class ObjectClient:
+    def __init__(self, *_):
+        self._queues = {}
+        self._priority_queues = {}
+        self._hashes = {}
+
+    def queue(self, name):
+        if name not in self._queues:
+            self._queues[name] = Queue()
+        return self._queues[name]
+
+    def priority_queue(self, name):
+        if name not in self._priority_queues:
+            self._priority_queues[name] = PriorityQueue()
+        return self._priority_queues[name]
+
+    def hash(self, name):
+        if name not in self._hashes:
+            self._hashes[name] = Hash()
+        return self._hashes[name]
