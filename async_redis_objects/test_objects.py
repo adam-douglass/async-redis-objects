@@ -65,7 +65,7 @@ async def test_hash_basics(client):
         'd': {'char': 'a', 'num': 0}
     }
     await new_hash.clear()
-    assert await new_hash.length() == 0
+    assert await new_hash.size() == 0
 
 
 @pytest.mark.asyncio

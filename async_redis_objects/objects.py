@@ -75,6 +75,10 @@ class Hash:
         """Read all the keys in the hash."""
         return {k.decode() for k in await self.client.hkeys(self.key)}
 
+    async def size(self) -> int:
+        """Get the number of items in the hash table."""
+        return await self.client.hlen(self.key)
+
     async def delete(self, key) -> bool:
         """Remove a field from the hash.
 

@@ -88,6 +88,10 @@ class Hash:
     async def keys(self) -> Set[str]:
         return set(self.data.keys())
 
+    async def size(self) -> int:
+        """Get the number of items in the hash table."""
+        return len(self.data)
+
     async def set(self, key, value) -> bool:
         """Returns if the key is new or not. Set is performed either way."""
         new = key in self.data
