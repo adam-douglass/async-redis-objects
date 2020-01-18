@@ -16,6 +16,7 @@ Notes
  - Includes python implementation with matching interface for mocking. \
    `from async_redis_objects.mocks import ObjectClient`
  - tested on pypy and CPython 3.6 to 3.8
+ - [API documentation on read the docs](https://async-redis-objects.readthedocs.io)
 
 Example
 -------
