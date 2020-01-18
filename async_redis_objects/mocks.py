@@ -124,6 +124,9 @@ class Hash:
             return True
         return False
 
+    async def clear(self):
+        self.data = {}
+
 
 class ObjectClient:
     def __init__(self, *_):
