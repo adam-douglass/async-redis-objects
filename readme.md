@@ -22,7 +22,7 @@ Example
 ```python
 import aioredis
 import asyncio
-from async_redis_objects.mocks import ObjectClient
+from async_redis_objects import ObjectClient
 
 
 async def main():
