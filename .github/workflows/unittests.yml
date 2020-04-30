@@ -29,7 +29,8 @@ jobs:
     - name: Choose python command
       id: command
       run: |
-        if [ "${{ matrix.container }}" = pypy* ]; then
+        if [[ "${{ matrix.container }}" = pypy* ]] ;
+        then
           echo "::set-output name=python::pypy3"
         else
           echo "::set-output name=python::python"
