@@ -9,35 +9,34 @@ jobs:
     timeout-minutes: 4
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, pypy3]
+        python-container:
+          - python:3.6-slim
+          - python:3.7-slim
+          - python:3.8-slim
+          - pypy:3.6-slim
+
+    container: ${{ matrix.python-container }}
 
     services:
       redis:
         image: redis
-        ports:
-        - 6379:6379
         options: --entrypoint redis-server
 
     steps:
     - uses: actions/checkout@v1
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
     - name: Set up linux pip cache
       uses: actions/cache@v1
       if: startsWith(runner.os, 'Linux')
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        key: ${{ runner.os }}-pip-${{ matrix.python-container }}-${{ hashFiles('**/setup.py') }}
 
     - name: Install package
       run: |
         python -m pip install --upgrade pip
         pip install -e .[test]
+
     - name: Test with pytest
       run: |
         pip install pytest-cov

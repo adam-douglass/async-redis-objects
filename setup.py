@@ -10,15 +10,22 @@ setup(
     # metadata to display on PyPI
     author="Adam Douglass",
     author_email="douglass@malloc.ca",
-    description="Object orient interface to aioredis.",
+    description="Object oriented interface to aioredis.",
     long_description=open(os.path.join(os.path.dirname(__file__), 'readme.md')).read(),
     long_description_content_type='text/markdown',
     keywords="utility redis oop object-oriented",
     url="https://github.com/adam-douglass/async-redis-objects/",
 
     extras_require={
-        'test': ['pytest', 'pytest-asyncio'],
-        'docs': ['sphinx', 'sphinx_rtd_theme', 'sphinx_autodoc_typehints']
+        'test': [
+            'pytest',
+            'pytest-asyncio!=0.11'
+        ],
+        'docs': [
+            'sphinx',
+            'sphinx_rtd_theme',
+            'sphinx_autodoc_typehints'
+        ]
     },
     install_requires=['aioredis'],
 )

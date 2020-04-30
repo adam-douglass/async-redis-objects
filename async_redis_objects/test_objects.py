@@ -6,6 +6,8 @@ import aioredis
 
 from . import objects, mocks
 
+pytestmark = pytest.mark.asyncio
+
 
 def pytest_generate_tests(metafunc):
     if "client" in metafunc.fixturenames:
@@ -19,7 +21,10 @@ async def client(request):
         return
 
     try:
-        redis = aioredis.Redis(await aioredis.pool.create_pool(address='redis://localhost:6379', db=3, minsize=5))
+        pool = await aioredis.pool.create_pool(address='redis://redis:6379',
+                                               create_connection_timeout=5, db=3, minsize=5)
+        redis = aioredis.Redis(pool)
+        assert await redis.time()
         yield objects.ObjectClient(redis)
         await redis.flushdb()
         redis.close()
@@ -28,7 +33,6 @@ async def client(request):
         pytest.skip("No redis server available")
 
 
-@pytest.mark.asyncio
 async def test_hash_basics(client):
     new_hash = client.hash(uuid.uuid4().hex)
 
@@ -68,7 +72,6 @@ async def test_hash_basics(client):
     assert await new_hash.size() == 0
 
 
-@pytest.mark.asyncio
 async def test_queue(client):
     queue = client.queue(uuid.uuid4().hex)
 
@@ -95,7 +98,6 @@ async def test_queue(client):
     assert await queue.pop_ready() is None
 
 
-@pytest.mark.asyncio
 async def test_priority_queue(client):
     queue = client.priority_queue(uuid.uuid4().hex)
 
