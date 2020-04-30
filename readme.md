@@ -29,7 +29,7 @@ from async_redis_objects import ObjectClient
 
 async def main():
     # Connect with aioredis as normal
-    redis = aioredis.Redis(await aioredis.pool.create_pool(address='redis://localhost:6379', db=3, minsize=5))
+    redis = aioredis.Redis(await aioredis.pool.create_pool(address='redis://redis:6379', db=3, minsize=5))
 
     # Make an object client object with your redis object
     objects = ObjectClient(redis)
