@@ -4,25 +4,95 @@ on:
   release:
     types: [created]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: '3.x'
+        python-version: '3.7'
     - name: Build
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
-    - name: Test
-      run: |
-        rm -rf async_redis_objects setup.py
-        pip install async_redis_objects[test]==${GITHUB_REF##refs/tags/v} -f ./dist
-        pytest --pyargs async_redis_objects
+        ls dist
+    - name: Upload packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+          - python:3.6-slim
+          - python:3.7-slim
+          - python:3.8-slim
+          - pypy:3.6-slim
+
+    container: ${{ matrix.container }}
+
+    services:
+      redis:
+        image: redis
+        options: --entrypoint redis-server
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+
+      - name: Choose python command
+        id: command
+        run: |
+          if [[ "${{ matrix.container }}" = pypy* ]] ;
+          then
+            echo "::set-output name=python::pypy3"
+          else
+            echo "::set-output name=python::python"
+          fi
+
+      - name: Set up linux pip cache
+        uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.container }}-${{ hashFiles('**/setup.py') }}
+
+      - name: Install package
+        run: |
+          ${{ steps.command.outputs.python }} -m pip install --upgrade pip
+          pip install async_redis_objects[test]==${GITHUB_REF##refs/tags/v} -f ./dist
+
+      - name: Test with pytest
+        run: |
+          pytest --pyargs async_redis_objects
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
+    - name: Download packages
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
     - name: Publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
