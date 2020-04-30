@@ -8,18 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     strategy:
+      fail-fast: false
       matrix:
-        python:
-          - python
-        version:
-          - 3.6
-          - 3.7
-          - 3.8
-        include:
-          - python: pypy
-            version: 3.6
+        container:
+          - python:3.6-slim
+          - python:3.7-slim
+          - python:3.8-slim
+          - pypy:3.6
 
-    container: ${{ matrix.python }}:${{ matrix.version }}-slim
+    container: ${{ matrix.container }}
 
     services:
       redis:
@@ -29,16 +26,25 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Choose python command
+      id: command
+      run: |
+        if [ "${{ matrix.container }}" = pypy* ]; then
+          echo "::set-output name=python::pypy3"
+        else
+          echo "::set-output name=python::python"
+        fi
+
     - name: Set up linux pip cache
       uses: actions/cache@v1
       if: startsWith(runner.os, 'Linux')
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python }}-${{ matrix.version }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-pip-${{ matrix.container }}-${{ hashFiles('**/setup.py') }}
 
     - name: Install package
       run: |
-        ${{ matrix.python }} -m pip install --upgrade pip
+        ${{ steps.command.outputs.python }} -m pip install --upgrade pip
         pip install -e .[test]
 
     - name: Test with pytest
@@ -48,7 +54,7 @@ jobs:
 
     - name: Run examples in readme
       run: |-
-        ${{ matrix.python }} <<'EOM'
+        ${{ steps.command.outputs.python }} <<'EOM'
         import re
         count = 0
         for fragment in re.findall('```python(.*?)```', open('readme.md').read(), re.DOTALL):
