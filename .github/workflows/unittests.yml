@@ -2,6 +2,10 @@ name: unittests
 
 on: [push]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
 
