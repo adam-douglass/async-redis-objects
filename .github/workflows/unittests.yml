@@ -9,13 +9,17 @@ jobs:
     timeout-minutes: 4
     strategy:
       matrix:
-        python-container:
-          - python:3.6-slim
-          - python:3.7-slim
-          - python:3.8-slim
-          - pypy:3.6-slim
+        python:
+          - python
+        version:
+          - 3.6
+          - 3.7
+          - 3.8
+        include:
+          - python: pypy
+            version: 3.6
 
-    container: ${{ matrix.python-container }}
+    container: ${{ matrix.python }}:${{ matrix.version }}-slim
 
     services:
       redis:
@@ -30,11 +34,11 @@ jobs:
       if: startsWith(runner.os, 'Linux')
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-container }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python }}-${{ matrix.version }}-${{ hashFiles('**/setup.py') }}
 
     - name: Install package
       run: |
-        python -m pip install --upgrade pip
+        ${{ matrix.python }} -m pip install --upgrade pip
         pip install -e .[test]
 
     - name: Test with pytest
@@ -44,7 +48,7 @@ jobs:
 
     - name: Run examples in readme
       run: |-
-        python <<'EOM'
+        ${{ matrix.python }} <<'EOM'
         import re
         count = 0
         for fragment in re.findall('```python(.*?)```', open('readme.md').read(), re.DOTALL):
