@@ -1,4 +1,4 @@
-name: unittests
+name: Tests
 
 on: [push, pull_request]
 
@@ -7,7 +7,7 @@ defaults:
     shell: bash
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
     timeout-minutes: 4
