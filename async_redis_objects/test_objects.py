@@ -129,3 +129,20 @@ async def test_priority_queue(client):
     await queue.clear()
     assert await queue.length() == 0
     assert await queue.pop_ready() is None
+
+
+async def test_set(client: objects.ObjectClient):
+    data = client.set(uuid.uuid4().hex)
+    assert (await data.size()) == 0
+    assert (await data.add(1)) == 1
+    assert (await data.add(1, "1")) == 1
+    assert (await data.size()) == 2
+
+    assert (await data.all()) == {1, "1"}
+
+    assert await data.has(1)
+    await data.remove(1)
+    assert not await data.has(1)
+
+    await data.clear()
+    assert (await data.size()) == 0

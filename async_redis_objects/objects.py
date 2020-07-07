@@ -1,7 +1,61 @@
 import json
-from typing import Any, Dict, Set, Iterable
+import typing
+from typing import Any, Dict, Iterable
 import aioredis
-# from tenacity import retry
+
+
+class Set:
+    """Interface to a redis set.
+
+    Can be constructed directly, or from an :class:`ObjectClient` factory.
+    """
+    def __init__(self, key: str, client: aioredis.Redis):
+        """
+        :param key: key in the redis server that is empty, or pointing to an existing set
+        :param client:
+        """
+        self.key = key
+        self.client = client
+
+    async def add(self, *values) -> int:
+        """Add one or more values to the set.
+
+        :param values: All arguments are treated as items to add.
+        :returns: Number of items added to the set
+        """
+        return await self.client.sadd(self.key, *(json.dumps(_v) for _v in values))
+
+    async def has(self, value):
+        """Test if a value is in the set already
+
+        :param value: Possible value within the set.
+        :returns: boolean, true if value is in set.
+        """
+        return bool(await self.client.sismember(self.key, json.dumps(value)))
+
+    async def all(self) -> typing.Set[Any]:
+        """Load the entire set."""
+        values = await self.client.smembers(self.key)
+        return set((json.loads(v) for v in values))
+
+    async def size(self) -> int:
+        """Get the number of items in the set."""
+        return await self.client.scard(self.key)
+
+    async def remove(self, value) -> bool:
+        """Remove value from the set
+
+        :param value: Possible value in the set.
+        :returns: True if the field was removed.
+        """
+        return await self.client.srem(self.key, json.dumps(value)) == 1
+
+    async def clear(self):
+        """Clear all values in the set.
+
+        Removes the top level key from the redis database.
+        """
+        return await self.client.delete(self.key)
 
 
 class Hash:
@@ -67,7 +121,7 @@ class Hash:
             for k, v in values.items()
         }
 
-    async def keys(self) -> Set[str]:
+    async def keys(self) -> typing.Set[str]:
         """Read all the keys in the hash."""
         return {k.decode() for k in await self.client.hkeys(self.key)}
 
@@ -205,3 +259,7 @@ class ObjectClient:
     def hash(self, name: str) -> Hash:
         """Load a hashtable."""
         return Hash(name, self._client)
+
+    def set(self, name: str) -> Set:
+        """Load a set."""
+        return Set(name, self._client)

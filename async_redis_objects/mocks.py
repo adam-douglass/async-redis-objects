@@ -7,7 +7,37 @@ Whenever possible the interface and semantics should be the same.
 """
 import json
 from asyncio import queues, wait_for, TimeoutError, Semaphore
-from typing import Any, Set, Dict
+import typing
+from typing import Any, Dict
+
+
+class Set:
+    def __init__(self):
+        self.data = set()
+
+    async def add(self, *values) -> int:
+        new = 0
+        for item in values:
+            new += int(item not in self.data)
+            self.data.add(json.dumps(item))
+        return new
+
+    async def has(self, value):
+        return json.dumps(value) in self.data
+
+    async def all(self) -> typing.Set[Any]:
+        return set((json.loads(v) for v in self.data))
+
+    async def size(self) -> int:
+        return len(self.data)
+
+    async def remove(self, value) -> bool:
+        found = json.dumps(value) in self.data
+        self.data.remove(json.dumps(value))
+        return found
+
+    async def clear(self):
+        self.data = set()
 
 
 class Queue:
@@ -85,7 +115,7 @@ class Hash:
     def __init__(self):
         self.data = {}
 
-    async def keys(self) -> Set[str]:
+    async def keys(self) -> typing.Set[str]:
         return set(self.data.keys())
 
     async def size(self) -> int:
@@ -137,6 +167,7 @@ class ObjectClient:
         self._queues = {}
         self._priority_queues = {}
         self._hashes = {}
+        self._sets = {}
 
     def queue(self, name):
         if name not in self._queues:
@@ -152,3 +183,8 @@ class ObjectClient:
         if name not in self._hashes:
             self._hashes[name] = Hash()
         return self._hashes[name]
+
+    def set(self, name):
+        if name not in self._sets:
+            self._sets[name] = Set()
+        return self._sets[name]

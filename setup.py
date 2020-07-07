@@ -19,12 +19,13 @@ setup(
     extras_require={
         'test': [
             'pytest',
-            'pytest-asyncio!=0.11'
+            'pytest-asyncio!=0.11',
+            'coverage',
         ],
         'docs': [
             'sphinx',
             'sphinx_rtd_theme',
-            'sphinx_autodoc_typehints'
+            'sphinx_autodoc_typehints',
         ]
     },
     install_requires=['aioredis'],
