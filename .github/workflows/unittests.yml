@@ -48,7 +48,8 @@ jobs:
       run: |
         if [[ "${{ matrix.container }}" = pypy* ]] ;
         then
-          apt-get install build-essential
+          apt-get update;
+          apt-get install build-essential;
         else
           echo "ok"
         fi
