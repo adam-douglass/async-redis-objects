@@ -71,8 +71,10 @@ jobs:
           then
             apt-get update;
             apt-get install -yy build-essential;
+            ls -R
           else
             echo "ok"
+            ls -R
           fi
 
       - name: Set up linux pip cache
