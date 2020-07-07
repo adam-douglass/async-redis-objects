@@ -1,11 +1,7 @@
 import json
-from typing import Any, Dict, Set, Iterable, TypeVar
+from typing import Any, Dict, Set, Iterable
 import aioredis
 # from tenacity import retry
-
-
-# Token type for structure contents.
-ValueType = TypeVar('ValueType')
 
 
 class Hash:
@@ -21,7 +17,7 @@ class Hash:
         self.key = key
         self.client = client
 
-    async def set(self, key: str, value: ValueType) -> bool:
+    async def set(self, key: str, value) -> bool:
         """Set the value of a field in the hash.
 
         :param key: Key within the hash table.
@@ -30,7 +26,7 @@ class Hash:
         """
         return await self.client.hset(self.key, key, json.dumps(value)) == 1
 
-    async def add(self, key: str, value: ValueType) -> bool:
+    async def add(self, key: str, value) -> bool:
         """Add a field to the hash table.
 
         If a field with that key already exists, this operation does nothing.
@@ -41,7 +37,7 @@ class Hash:
         """
         return await self.client.hsetnx(self.key, key, json.dumps(value)) == 1
 
-    async def get(self, key: str) -> ValueType:
+    async def get(self, key: str):
         """Read a field from the hash.
 
         :param key: Possible key within the hash table.
@@ -52,7 +48,7 @@ class Hash:
             return None
         return json.loads(value)
 
-    async def mget(self, keys: Iterable[str]) -> Dict[str, ValueType]:
+    async def mget(self, keys: Iterable[str]) -> Dict[str, Any]:
         """Read a set of fields from the hash.
 
         :param keys: Sequence of potential keys to load from the hash.
@@ -63,7 +59,7 @@ class Hash:
             for k, v in zip(keys, values)
         }
 
-    async def all(self) -> Dict[str, ValueType]:
+    async def all(self) -> Dict[str, Any]:
         """Load the entire hash as a dict."""
         values = await self.client.hgetall(self.key)
         return {
