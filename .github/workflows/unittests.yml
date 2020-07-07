@@ -44,6 +44,15 @@ jobs:
           echo "::set-output name=python::python"
         fi
 
+    - name: Install build dependencies
+      run: |
+        if [[ "${{ matrix.container }}" = pypy* ]] ;
+        then
+          apt-get install build-essential
+        else
+          echo "ok"
+        fi
+
     - name: Set up linux pip cache
       uses: actions/cache@v1
       if: startsWith(runner.os, 'Linux')
