@@ -73,10 +73,12 @@ jobs:
           then
             apt-get update;
             apt-get install -yy build-essential;
-            ls -R
+          elif [[ "${{ matrix.container }}" = "python:3.9-slim" ]]
+          then
+            apt-get update;
+            apt-get install -yy build-essential python-dev;
           else
             echo "ok"
-            ls -R
           fi
 
       - name: Set up linux pip cache
