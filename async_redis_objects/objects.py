@@ -1,11 +1,16 @@
 import time
-import contextlib
+import sys
 import json
 import uuid
 import typing
 from typing import Any, Dict, Iterable
 import aioredis
 import asyncio
+
+if sys.version_info[1] >= 7:
+    _current_task = asyncio.current_task
+else:
+    _current_task = asyncio.Task.current_task
 
 
 class Set:
@@ -281,8 +286,7 @@ class LockContext:
 
         # Once we have the lock, set expiry and a local timeout
         await self.client.expire(self.name, int(self.max_duration))
-        current_task = asyncio.Task.current_task()
-        self.watcher = asyncio.ensure_future(self._cancel_this(current_task, self.max_duration))
+        self.watcher = asyncio.ensure_future(self._cancel_this(_current_task(), self.max_duration))
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # Clear up the lock
