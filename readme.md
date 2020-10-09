@@ -13,6 +13,7 @@ Notes
    - hash table
    - queue (list)
    - priority queue (sorted set)
+   - locks (keys)
  - Includes python implementation with matching interface for mocking. \
    `from async_redis_objects.mocks import ObjectClient`
  - tested on pypy and CPython 3.6 to 3.8
