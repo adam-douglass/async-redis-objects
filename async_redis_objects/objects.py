@@ -281,7 +281,7 @@ class LockContext:
 
         # Once we have the lock, set expiry and a local timeout
         await self.client.expire(self.name, int(self.max_duration))
-        self.watcher = asyncio.create_task(self._cancel_this(asyncio.current_task(), self.max_duration))
+        self.watcher = asyncio.ensure_future(self._cancel_this(asyncio.current_task(), self.max_duration))
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         # Clear up the lock
