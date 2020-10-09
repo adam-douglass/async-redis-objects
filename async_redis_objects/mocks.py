@@ -173,7 +173,8 @@ class LockContext:
 
     async def __aenter__(self):
         await asyncio.wait_for(self.primitive.acquire(), timeout=self.timeout)
-        self.watcher = asyncio.ensure_future(self._cancel_this(asyncio.current_task(), self.max_duration))
+        current_task = asyncio.Task.current_task()
+        self.watcher = asyncio.ensure_future(self._cancel_this(current_task, self.max_duration))
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if not self.watcher.done():

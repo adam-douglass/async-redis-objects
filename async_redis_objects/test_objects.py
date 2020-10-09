@@ -178,8 +178,8 @@ async def test_lock(client: objects.ObjectClient):
             output.append(0)
 
     start = time.time()
-    a = asyncio.create_task(gather_value())
-    b = asyncio.create_task(gather_value())
+    a = asyncio.ensure_future(gather_value())
+    b = asyncio.ensure_future(gather_value())
     await a
     await b
     assert time.time() - start > 2
