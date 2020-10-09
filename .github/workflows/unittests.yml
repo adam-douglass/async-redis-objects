@@ -51,6 +51,10 @@ jobs:
         then
           apt-get update;
           apt-get install -yy build-essential;
+        elif [[ "${{ matrix.container }}" = "python:3.9-slim" ]]
+        then
+          apt-get update;
+          apt-get install -yy build-essential python-dev;
         else
           echo "ok"
         fi
