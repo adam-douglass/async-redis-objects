@@ -89,6 +89,7 @@ jobs:
 
     - name: Upload coverage
       run: |-
+        apt-get update
         apt-get install -yy git
         codecov
       env:
