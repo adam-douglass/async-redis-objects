@@ -164,21 +164,26 @@ class Hash:
         self.data = {}
 
 
-async def _cancel_this(target, timeout):
-    await asyncio.sleep(timeout)
-    target.cancel()
+class LockContext:
+    def __init__(self, primitive, max_duration, timeout):
+        self.primitive = primitive
+        self.max_duration = max_duration
+        self.timeout = timeout
+        self.watcher = None
 
+    async def __aenter__(self):
+        await asyncio.wait_for(self.primitive.acquire(), timeout=self.timeout)
+        self.watcher = asyncio.create_task(self._cancel_this(asyncio.current_task(), self.max_duration))
 
-@contextlib.asynccontextmanager
-async def _lock_context(primitive, max_duration, timeout):
-    await asyncio.wait_for(primitive.acquire(), timeout=timeout)
-    watcher = asyncio.create_task(_cancel_this(asyncio.current_task(), max_duration))
-    try:
-        yield
-    finally:
-        if not watcher.done():
-            watcher.cancel()
-        primitive.release()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if not self.watcher.done():
+            self.watcher.cancel()
+        self.primitive.release()
+
+    @staticmethod
+    async def _cancel_this(target, timeout):
+        await asyncio.sleep(timeout)
+        target.cancel()
 
 
 class ObjectClient:
@@ -219,4 +224,4 @@ class ObjectClient:
         """
         if name not in self._locks:
             self._locks[name] = asyncio.Lock()
-        return _lock_context(self._locks[name], max_duration, timeout)
+        return LockContext(self._locks[name], max_duration, timeout)
