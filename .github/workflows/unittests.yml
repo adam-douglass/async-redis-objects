@@ -88,6 +88,8 @@ jobs:
         'EOM'
 
     - name: Upload coverage
-      run: codecov
+      run: |-
+        apt-get install -yy git
+        codecov
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
