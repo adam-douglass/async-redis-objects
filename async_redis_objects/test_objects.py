@@ -1,3 +1,4 @@
+import time
 import uuid
 import asyncio
 
@@ -146,3 +147,40 @@ async def test_set(client: objects.ObjectClient):
 
     await data.clear()
     assert (await data.size()) == 0
+
+
+async def test_lock(client: objects.ObjectClient):
+    counter = 0
+    async with client.lock('lock-name', 30):
+        counter += 1
+
+    assert counter == 1
+
+    with pytest.raises(asyncio.TimeoutError):
+        async with client.lock('lock-name', 30):
+            async with client.lock('lock-name', 30, timeout=1):
+                counter += 1
+
+    assert counter == 1
+
+    with pytest.raises(asyncio.CancelledError):
+        async with client.lock('lock-name', 1):
+            await asyncio.sleep(2)
+            counter += 1
+
+    assert counter == 1
+
+    output = []
+
+    async def gather_value():
+        async with client.lock('lock-name', 30):
+            await asyncio.sleep(1)
+            output.append(0)
+
+    start = time.time()
+    a = asyncio.create_task(gather_value())
+    b = asyncio.create_task(gather_value())
+    await a
+    await b
+    assert time.time() - start > 2
+    assert len(output) == 2

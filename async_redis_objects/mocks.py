@@ -5,7 +5,9 @@ The objects from this module implement the same interface as those from the
 other modules, but are implemented as native python objects rather than redis calls.
 Whenever possible the interface and semantics should be the same.
 """
+import contextlib
 import json
+import asyncio
 from asyncio import queues, wait_for, TimeoutError, Semaphore
 import typing
 from typing import Any, Dict
@@ -162,12 +164,30 @@ class Hash:
         self.data = {}
 
 
+async def _cancel_this(target, timeout):
+    await asyncio.sleep(timeout)
+    target.cancel()
+
+
+@contextlib.asynccontextmanager
+async def _lock_context(primitive, max_duration, timeout):
+    await asyncio.wait_for(primitive.acquire(), timeout=timeout)
+    watcher = asyncio.create_task(_cancel_this(asyncio.current_task(), max_duration))
+    try:
+        yield
+    finally:
+        if not watcher.done():
+            watcher.cancel()
+        primitive.release()
+
+
 class ObjectClient:
     def __init__(self, *_):
         self._queues = {}
         self._priority_queues = {}
         self._hashes = {}
         self._sets = {}
+        self._locks = {}
 
     def queue(self, name):
         if name not in self._queues:
@@ -188,3 +208,15 @@ class ObjectClient:
         if name not in self._sets:
             self._sets[name] = Set()
         return self._sets[name]
+
+    def lock(self, name: str, max_duration: int = 60, timeout: int = None):
+        """A lock within this python process
+
+        :param name: A unique identifier for the lock
+        :param max_duration: Max time to hold the lock in seconds
+        :param timeout: Max time to wait to acquire the mutex
+        :return:
+        """
+        if name not in self._locks:
+            self._locks[name] = asyncio.Lock()
+        return _lock_context(self._locks[name], max_duration, timeout)

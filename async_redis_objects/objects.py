@@ -1,7 +1,11 @@
+import time
+import contextlib
 import json
+import uuid
 import typing
 from typing import Any, Dict, Iterable
 import aioredis
+import asyncio
 
 
 class Set:
@@ -240,6 +244,56 @@ class PriorityQueue:
         return await self.client.zcount(self.key)
 
 
+_delete_if_equal = """
+local key = KEYS[1]
+local value = ARGV[1]
+
+if redis.call('get', key) == value then
+    redis.call('del', key)
+    return true
+end
+
+return false
+"""
+_delete_if_equal_sha = None
+
+
+async def _cancel_this(target, timeout):
+    await asyncio.sleep(timeout)
+    target.cancel()
+
+
+@contextlib.asynccontextmanager
+async def _lock_context(name, client, max_duration, timeout):
+    timeout = timeout or -float('inf')
+
+    # Make sure our script is loaded
+    global _delete_if_equal_sha
+    if not _delete_if_equal_sha:
+        _delete_if_equal_sha = await client.script_load(_delete_if_equal)
+
+    # Rather than do something clever, polling on the lock should be fine for now
+    start = time.time()
+    unique_value = uuid.uuid4().hex
+    while not await client.setnx(name, unique_value):
+        wait = min(0.1, time.time() - start - timeout)
+        if wait < 0:
+            raise asyncio.TimeoutError()
+        await asyncio.sleep(wait)
+
+    # Once we have the lock, set expiry and a local timeout
+    await client.expire(name, int(max_duration))
+    watcher = asyncio.create_task(_cancel_this(asyncio.current_task(), max_duration))
+
+    try:
+        yield
+    finally:
+        # Clear up the lock
+        if not watcher.done():
+            watcher.cancel()
+        await client.evalsha(_delete_if_equal_sha, keys=[name], args=[unique_value])
+
+
 class ObjectClient:
     """A client object to represent a redis server.
 
@@ -263,3 +317,14 @@ class ObjectClient:
     def set(self, name: str) -> Set:
         """Load a set."""
         return Set(name, self._client)
+
+    def lock(self, name: str, max_duration: int = 60, timeout: int = None):
+        """A redis resident lock to create mutex blocks across devices.
+
+        :param name: A unique identifier for the lock
+        :param max_duration: Max time to hold the lock in seconds
+        :param timeout: Max time to wait to acquire the mutex
+        :return:
+        """
+        name = '~~lock~~:' + name
+        return _lock_context(name, self._client, max_duration, timeout)
