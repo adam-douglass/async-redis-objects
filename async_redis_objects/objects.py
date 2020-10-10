@@ -305,11 +305,11 @@ class Publisher:
         self.default_channel = default_channel
         self.client = client
 
-    async def send(self, message=None, json=None, channel=None):
+    async def send(self, message: str = None, json=None, channel=None):
         channel = channel or self.default_channel
-        if message:
+        if message is not None:
             await self.client.publish(channel, message)
-        elif json:
+        elif json is not None:
             await self.client.publish_json(channel, json)
         else:
             raise RuntimeError("Method Publisher.send requires at least one of 'message' and 'json' parameters")
