@@ -191,6 +191,23 @@ class LockContext:
         target.cancel()
 
 
+class Publisher:
+    def __init__(self, default_channel):
+        self.default_channel = default_channel
+
+    async def send(self, message=None, json=None, channel=None):
+        channel = channel or self.default_channel
+        if message:
+            pass
+        elif json:
+            pass
+        else:
+            raise RuntimeError("Method Publisher.send requires at least one of 'message' and 'json' parameters")
+
+    async def listeners(self) -> int:
+        return 0
+
+
 class ObjectClient:
     def __init__(self, *_):
         self._queues = {}
@@ -230,3 +247,6 @@ class ObjectClient:
         if name not in self._locks:
             self._locks[name] = asyncio.Lock()
         return LockContext(self._locks[name], max_duration, timeout)
+
+    def publisher(self, channel) -> Publisher:
+        return Publisher(channel)

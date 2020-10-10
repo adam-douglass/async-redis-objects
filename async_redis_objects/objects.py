@@ -300,6 +300,30 @@ class LockContext:
         target.cancel()
 
 
+class Publisher:
+    def __init__(self, default_channel, client):
+        self.default_channel = default_channel
+        self.client = client
+
+    async def send(self, message=None, json=None, channel=None):
+        channel = channel or self.default_channel
+        if message:
+            await self.client.publish(channel, message)
+        elif json:
+            await self.client.publish_json(channel, json)
+        else:
+            raise RuntimeError("Method Publisher.send requires at least one of 'message' and 'json' parameters")
+
+    async def listeners(self) -> int:
+        """Number of subscribers listening on the default channel of this publisher.
+
+        Note: A significant caveat of this from redis is this is only those subscribed to the
+              channel directly. An unknown number of additional listeners on patterns that
+              include this channel may also exist.
+        """
+        return (await self.client.pubsub_numsub(self.default_channel))[self.default_channel.encode()]
+
+
 class ObjectClient:
     """A client object to represent a redis server.
 
@@ -334,3 +358,10 @@ class ObjectClient:
         """
         name = '~~lock~~:' + name
         return LockContext(name, self._client, max_duration, timeout)
+
+    def publisher(self, channel) -> Publisher:
+        """Generate a publisher for redis' PUBSUB system.
+
+        :param channel: Channel this publisher writes to by default.
+        """
+        return Publisher(channel, self._client)

@@ -184,3 +184,10 @@ async def test_lock(client: objects.ObjectClient):
     await b
     assert time.time() - start > 2
     assert len(output) == 2
+
+
+async def test_publisher(client: objects.ObjectClient):
+    publisher = client.publisher('abc')
+    await publisher.send("abc123")
+    await publisher.send(json={'humidity': 0.5, 'message': 'cats'}, channel='abc_details')
+    assert await publisher.listeners() == 0
