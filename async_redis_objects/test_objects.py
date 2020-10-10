@@ -191,3 +191,6 @@ async def test_publisher(client: objects.ObjectClient):
     await publisher.send("abc123")
     await publisher.send(json={'humidity': 0.5, 'message': 'cats'}, channel='abc_details')
     assert await publisher.listeners() == 0
+
+    with pytest.raises(RuntimeError):
+        await publisher.send()
