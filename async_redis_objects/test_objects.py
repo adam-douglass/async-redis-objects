@@ -148,6 +148,11 @@ async def test_set(client: objects.ObjectClient):
     await data.clear()
     assert (await data.size()) == 0
 
+    data_b = client.set(uuid.uuid4().hex, encoder=str, decoder=int)
+    assert (await data_b.add(1, "1")) == 1
+    assert (await data_b.size()) == 1
+    assert (await data_b.all()) == {1}
+
 
 async def test_lock(client: objects.ObjectClient):
     counter = 0

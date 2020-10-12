@@ -18,13 +18,15 @@ class Set:
 
     Can be constructed directly, or from an :class:`ObjectClient` factory.
     """
-    def __init__(self, key: str, client: aioredis.Redis):
+    def __init__(self, key: str, client: aioredis.Redis, encoder, decoder):
         """
         :param key: key in the redis server that is empty, or pointing to an existing set
         :param client:
         """
         self.key = key
         self.client = client
+        self._encoder = encoder
+        self._decoder = decoder
 
     async def add(self, *values) -> int:
         """Add one or more values to the set.
@@ -32,7 +34,7 @@ class Set:
         :param values: All arguments are treated as items to add.
         :returns: Number of items added to the set
         """
-        return await self.client.sadd(self.key, *(json.dumps(_v) for _v in values))
+        return await self.client.sadd(self.key, *(self._encoder(_v) for _v in values))
 
     async def has(self, value):
         """Test if a value is in the set already
@@ -40,12 +42,12 @@ class Set:
         :param value: Possible value within the set.
         :returns: boolean, true if value is in set.
         """
-        return bool(await self.client.sismember(self.key, json.dumps(value)))
+        return bool(await self.client.sismember(self.key, self._encoder(value)))
 
     async def all(self) -> typing.Set[Any]:
         """Load the entire set."""
         values = await self.client.smembers(self.key)
-        return set((json.loads(v) for v in values))
+        return set((self._decoder(v) for v in values))
 
     async def size(self) -> int:
         """Get the number of items in the set."""
@@ -57,7 +59,7 @@ class Set:
         :param value: Possible value in the set.
         :returns: True if the field was removed.
         """
-        return await self.client.srem(self.key, json.dumps(value)) == 1
+        return await self.client.srem(self.key, self._encoder(value)) == 1
 
     async def clear(self):
         """Clear all values in the set.
@@ -72,13 +74,15 @@ class Hash:
 
     Can be constructed directly, or from an :class:`ObjectClient` factory.
     """
-    def __init__(self, key: str, client: aioredis.Redis):
+    def __init__(self, key: str, client: aioredis.Redis, encoder, decoder):
         """
         :param key: key in the redis server that is empty, or pointing to an existing hash
         :param client:
         """
         self.key = key
         self.client = client
+        self._encoder = encoder
+        self._decoder = decoder
 
     async def set(self, key: str, value) -> bool:
         """Set the value of a field in the hash.
@@ -87,7 +91,7 @@ class Hash:
         :param value: Unserialized value to write to the hash table.
         :return: True if the key is new.
         """
-        return await self.client.hset(self.key, key, json.dumps(value)) == 1
+        return await self.client.hset(self.key, key, self._encoder(value)) == 1
 
     async def add(self, key: str, value) -> bool:
         """Add a field to the hash table.
@@ -98,7 +102,7 @@ class Hash:
         :param value: Unserialized value to write to the hash table.
         :returns: True if the value has been inserted.
         """
-        return await self.client.hsetnx(self.key, key, json.dumps(value)) == 1
+        return await self.client.hsetnx(self.key, key, self._encoder(value)) == 1
 
     async def get(self, key: str):
         """Read a field from the hash.
@@ -109,7 +113,7 @@ class Hash:
         value = await self.client.hget(self.key, key)
         if not value:
             return None
-        return json.loads(value)
+        return self._decoder(value)
 
     async def mget(self, keys: Iterable[str]) -> Dict[str, Any]:
         """Read a set of fields from the hash.
@@ -118,7 +122,7 @@ class Hash:
         """
         values = await self.client.hmget(self.key, *keys)
         return {
-            k: json.loads(v)
+            k: self._decoder(v)
             for k, v in zip(keys, values)
         }
 
@@ -126,7 +130,7 @@ class Hash:
         """Load the entire hash as a dict."""
         values = await self.client.hgetall(self.key)
         return {
-            k.decode(): json.loads(v)
+            k.decode(): self._decoder(v)
             for k, v in values.items()
         }
 
@@ -159,16 +163,18 @@ class Queue:
 
     Can be constructed directly, or from an :class:`ObjectClient` factory.
     """
-    def __init__(self, key: str, client: aioredis.Redis):
+    def __init__(self, key: str, client: aioredis.Redis, encoder, decoder):
         self.key = key
         self.client = client
+        self._encoder = encoder
+        self._decoder = decoder
 
     async def push(self, data):
         """Push an item to the queue.
 
         :param data: Item to push into queue.
         """
-        await self.client.lpush(self.key, json.dumps(data))
+        await self.client.lpush(self.key, self._encoder(data))
 
     async def pop(self, timeout: int = 1) -> Any:
         """Pop an item from the front of the queue.
@@ -178,14 +184,14 @@ class Queue:
         message = await self.client.brpop(self.key, timeout=timeout)
         if message is None:
             return None
-        return json.loads(message[1])
+        return self._decoder(message[1])
 
     async def pop_ready(self) -> Any:
         """Pop an item from the front of the queue if it is immediately available."""
         message = await self.client.rpop(self.key)
         if message is None:
             return None
-        return json.loads(message)
+        return self._decoder(message)
 
     async def clear(self):
         """Drop all items from the queue."""
@@ -201,9 +207,11 @@ class PriorityQueue:
 
     Can be constructed directly, or from an :class:`ObjectClient` factory.
     """
-    def __init__(self, key: str, client: aioredis.Redis):
+    def __init__(self, key: str, client: aioredis.Redis, encoder, decoder):
         self.key = key
         self.client = client
+        self._encoder = encoder
+        self._decoder = decoder
 
     async def push(self, data, priority=0):
         """Push an item to the queue.
@@ -213,7 +221,7 @@ class PriorityQueue:
         :param data: Item to push into queue.
         :param priority: Sorting priority within the queue.
         """
-        await self.client.zadd(self.key, priority, json.dumps(data))
+        await self.client.zadd(self.key, priority, self._encoder(data))
 
     async def pop(self, timeout: int = 1) -> Any:
         """Pop the highest priority item from the queue.
@@ -223,14 +231,14 @@ class PriorityQueue:
         message = await self.client.bzpopmax(self.key, timeout=timeout)
         if message is None:
             return None
-        return json.loads(message[1])
+        return self._decoder(message[1])
 
     async def pop_ready(self) -> Any:
         """Pop the highest priority item from the queue if one is available immediately."""
         message = await self.client.zpopmax(self.key)
         if not message:
             return None
-        return json.loads(message[0])
+        return self._decoder(message[0])
 
     async def clear(self):
         """Drop all items from the queue."""
@@ -238,11 +246,11 @@ class PriorityQueue:
 
     async def score(self, item):
         """Get the current priority of `item`."""
-        return await self.client.zscore(self.key, json.dumps(item))
+        return await self.client.zscore(self.key, self._encoder(item))
 
     async def rank(self, item):
         """Get the distance of `item` from the front of the queue."""
-        return await self.client.zrevrank(self.key, json.dumps(item))
+        return await self.client.zrevrank(self.key, self._encoder(item))
 
     async def length(self):
         """Number of items in the queue."""
@@ -301,14 +309,18 @@ class LockContext:
 
 
 class Publisher:
-    def __init__(self, default_channel, client):
+    def __init__(self, default_channel, client, encoder):
         self.default_channel = default_channel
         self.client = client
+        self._encoder = encoder
 
     async def send(self, message: str = None, json=None, channel=None):
         channel = channel or self.default_channel
         if message is not None:
-            await self.client.publish(channel, message)
+            if isinstance(message, str):
+                await self.client.publish(channel, message)
+            else:
+                await self.client.publish(channel, self._encoder(message))
         elif json is not None:
             await self.client.publish_json(channel, json)
         else:
@@ -329,24 +341,34 @@ class ObjectClient:
 
     Can be used as a factory to access data structures in the server as python objects.
     """
-    def __init__(self, redis_client: aioredis.Redis):
+    def __init__(self, redis_client: aioredis.Redis, encoder=None, decoder=None):
         self._client = redis_client
+        self._encoder = encoder or json.dumps
+        self._decoder = decoder or json.loads
 
-    def queue(self, name: str) -> Queue:
+    def queue(self, name: str, encoder=None, decoder=None) -> Queue:
         """Load a list to be used as a queue."""
-        return Queue(name, self._client)
+        return Queue(name, self._client,
+                     encoder=encoder or self._encoder,
+                     decoder=decoder or self._decoder)
 
-    def priority_queue(self, name: str) -> PriorityQueue:
+    def priority_queue(self, name: str, encoder=None, decoder=None) -> PriorityQueue:
         """Load a stateful-set to be used as a priority queue."""
-        return PriorityQueue(name, self._client)
+        return PriorityQueue(name, self._client,
+                             encoder=encoder or self._encoder,
+                             decoder=decoder or self._decoder)
 
-    def hash(self, name: str) -> Hash:
+    def hash(self, name: str, encoder=None, decoder=None) -> Hash:
         """Load a hashtable."""
-        return Hash(name, self._client)
+        return Hash(name, self._client,
+                    encoder=encoder or self._encoder,
+                    decoder=decoder or self._decoder)
 
-    def set(self, name: str) -> Set:
+    def set(self, name: str, encoder=None, decoder=None) -> Set:
         """Load a set."""
-        return Set(name, self._client)
+        return Set(name, self._client,
+                   encoder=encoder or self._encoder,
+                   decoder=decoder or self._decoder)
 
     def lock(self, name: str, max_duration: int = 60, timeout: int = None):
         """A redis resident lock to create mutex blocks across devices.
@@ -359,9 +381,10 @@ class ObjectClient:
         name = '~~lock~~:' + name
         return LockContext(name, self._client, max_duration, timeout)
 
-    def publisher(self, channel) -> Publisher:
+    def publisher(self, channel, encoder=None) -> Publisher:
         """Generate a publisher for redis' PUBSUB system.
 
         :param channel: Channel this publisher writes to by default.
+        :param encoder: Method to transform messages into strings to broadcast
         """
-        return Publisher(channel, self._client)
+        return Publisher(channel, self._client, encoder=encoder or self._encoder)
