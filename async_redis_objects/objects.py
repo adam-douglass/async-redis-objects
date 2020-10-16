@@ -181,7 +181,8 @@ class Queue:
 
         :param timeout: Maximum time to wait for an item to become available in seconds.
         """
-        message = await self.client.brpop(self.key, timeout=timeout)
+        with await self.client as con:
+            message = await con.brpop(self.key, timeout=timeout)
         if message is None:
             return None
         return self._decoder(message[1])
@@ -228,7 +229,8 @@ class PriorityQueue:
 
         :param timeout: Maximum time to wait in seconds for an item to become available.
         """
-        message = await self.client.bzpopmax(self.key, timeout=timeout)
+        with await self.client as con:
+            message = await con.bzpopmax(self.key, timeout=timeout)
         if message is None:
             return None
         return self._decoder(message[1])
